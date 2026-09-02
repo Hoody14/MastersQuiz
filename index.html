@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>სამაგისტრო ტესტი — ინფორმატიკა და კომპიუტერული სისტემები</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ================= HOME ================= -->
+  <section id="screen-home" class="screen active">
+    <header class="hero">
+      <div class="hero-badge">სამაგისტრო გამოცდა · სპეციალობა</div>
+      <h1>ინფორმატიკა და კომპიუტერული სისტემები</h1>
+      <p class="hero-sub">ინტერაქციული სატესტო ტრენაჟორი — ყველა კითხვა, ყველა პასუხის განმარტებით</p>
+      <div class="hero-stats">
+        <div class="stat"><span id="stat-total">0</span><small>კითხვა</small></div>
+        <div class="stat"><span id="stat-sections">0</span><small>სექცია</small></div>
+        <div class="stat"><span id="stat-best">—</span><small>საუკეთესო შედეგი</small></div>
+      </div>
+    </header>
+
+    <div class="panel">
+      <h2 class="panel-title">1. აირჩიე სექცია</h2>
+      <div id="section-list" class="section-list"></div>
+      <div class="section-actions">
+        <button class="btn btn-ghost btn-sm" id="btn-select-all">ყველას მონიშვნა</button>
+        <button class="btn btn-ghost btn-sm" id="btn-select-none">მონიშვნის მოხსნა</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-title">2. პარამეტრები</h2>
+
+      <div class="opt-row">
+        <div class="opt-label">
+          <strong>რეჟიმი</strong>
+          <span>სწავლის რეჟიმში პასუხი მაშინვე მოწმდება და ჩნდება განმარტებები</span>
+        </div>
+        <div class="segmented" id="mode-switch">
+          <button class="seg active" data-mode="study">სწავლა</button>
+          <button class="seg" data-mode="exam">გამოცდა</button>
+        </div>
+      </div>
+
+      <div class="opt-row">
+        <div class="opt-label">
+          <strong>კითხვების არევა</strong>
+          <span>შემთხვევითი თანმიმდევრობა</span>
+        </div>
+        <label class="toggle"><input type="checkbox" id="opt-shuffle-q"><span class="track"></span></label>
+      </div>
+
+      <div class="opt-row">
+        <div class="opt-label">
+          <strong>პასუხების არევა</strong>
+          <span>ვარიანტების თანმიმდევრობა შემთხვევითი იქნება</span>
+        </div>
+        <label class="toggle"><input type="checkbox" id="opt-shuffle-a"><span class="track"></span></label>
+      </div>
+
+      <div class="opt-row">
+        <div class="opt-label">
+          <strong>კითხვების რაოდენობა</strong>
+          <span id="limit-hint">ყველა შერჩეული კითხვა</span>
+        </div>
+        <select id="opt-limit" class="select">
+          <option value="0">ყველა</option>
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="30">30</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="start-bar">
+      <div class="start-info"><span id="selected-count">0</span> კითხვა შერჩეულია</div>
+      <div class="start-buttons">
+        <button class="btn btn-ghost" id="btn-resume" hidden>გაგრძელება</button>
+        <button class="btn btn-primary" id="btn-start">ქვიზის დაწყება</button>
+      </div>
+    </div>
+
+    <div class="panel panel-flat">
+      <h2 class="panel-title">დათვალიერების რეჟიმი</h2>
+      <p class="muted">ყველა კითხვა და სწორი პასუხი განმარტებებთან ერთად — სწრაფი გადახედვისთვის.</p>
+      <button class="btn btn-outline" id="btn-browse">ყველა კითხვის ნახვა</button>
+    </div>
+  </section>
+
+  <!-- ================= QUIZ ================= -->
+  <section id="screen-quiz" class="screen">
+    <div class="quiz-top">
+      <button class="icon-btn" id="btn-exit" title="გასვლა">✕</button>
+      <div class="progress-wrap">
+        <div class="progress-meta">
+          <span id="q-counter">1 / 1</span>
+          <span id="q-section" class="chip"></span>
+        </div>
+        <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+      </div>
+      <div class="score-box">
+        <span class="ok" id="score-ok">0</span>
+        <span class="sep">/</span>
+        <span class="bad" id="score-bad">0</span>
+      </div>
+    </div>
+
+    <div class="quiz-body">
+      <div class="question-card">
+        <div class="q-origin" id="q-origin"></div>
+        <h2 class="q-text" id="q-text"></h2>
+        <div class="options" id="options"></div>
+        <div class="q-note" id="q-note" hidden></div>
+      </div>
+    </div>
+
+    <div class="quiz-nav">
+      <button class="btn btn-ghost" id="btn-prev">← წინა</button>
+      <button class="btn btn-outline" id="btn-reveal">პასუხის ჩვენება</button>
+      <button class="btn btn-primary" id="btn-next">შემდეგი →</button>
+    </div>
+  </section>
+
+  <!-- ================= RESULT ================= -->
+  <section id="screen-result" class="screen">
+    <div class="result-card">
+      <div class="result-ring" id="result-ring">
+        <div class="result-ring-inner">
+          <span id="result-pct">0%</span>
+          <small id="result-frac">0 / 0</small>
+        </div>
+      </div>
+      <h2 id="result-title">შედეგი</h2>
+      <p id="result-msg" class="muted"></p>
+
+      <div class="result-stats">
+        <div class="rstat ok"><span id="res-ok">0</span><small>სწორი</small></div>
+        <div class="rstat bad"><span id="res-bad">0</span><small>არასწორი</small></div>
+        <div class="rstat skip"><span id="res-skip">0</span><small>გამოტოვებული</small></div>
+      </div>
+
+      <div id="result-by-section" class="by-section"></div>
+
+      <div class="result-actions">
+        <button class="btn btn-primary" id="btn-review-wrong">შეცდომების გარჩევა</button>
+        <button class="btn btn-outline" id="btn-review-all">ყველას გადახედვა</button>
+        <button class="btn btn-ghost" id="btn-retry">თავიდან</button>
+        <button class="btn btn-ghost" id="btn-home">მთავარ გვერდზე</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= BROWSE ================= -->
+  <section id="screen-browse" class="screen">
+    <div class="browse-top">
+      <button class="icon-btn" id="btn-browse-exit" title="გასვლა">✕</button>
+      <input type="search" id="browse-search" class="search" placeholder="ძებნა კითხვებში…">
+      <select id="browse-section" class="select"></select>
+    </div>
+    <div id="browse-list" class="browse-list"></div>
+  </section>
+
+</div>
+
+<script src="data/architecture.js"></script>
+<script src="data/programming.js"></script>
+<script src="data/datastructures.js"></script>
+<script src="data/networks.js"></script>
+<script src="data/sql.js"></script>
+<script src="data/os.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

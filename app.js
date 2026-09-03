@@ -30,6 +30,22 @@
     return out;
   }
 
+  // ღია კითხვის პასუხის ნორმალიზება შედარებისთვის
+  function norm(s) {
+    return String(s).toLowerCase().replace(/\s+/g, '').replace(/[.,;'"`]+$/g, '');
+  }
+
+  function acceptedAnswers(q) {
+    return q.accept && q.accept.length ? q.accept : [q.answer];
+  }
+
+  function isCorrect(q, a) {
+    if (q.type === 'open') {
+      return typeof a === 'string' && acceptedAnswers(q).some((x) => norm(x) === norm(a));
+    }
+    return a === q.correct;
+  }
+
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -130,7 +146,7 @@
     if (limit) items = items.slice(0, limit);
 
     items = items.map((it) => {
-      let order = it.q.options.map((_, i) => i);
+      let order = (it.q.options || []).map((_, i) => i);
       if ($('opt-shuffle-a').checked) order = shuffle(order);
       return Object.assign({}, it, { order });
     });
@@ -193,6 +209,17 @@
     const box = $('options');
     box.innerHTML = '';
 
+    if (q.type === 'open') {
+      renderOpenQuestion(q, i, answered, box);
+      $('btn-prev').disabled = i === 0;
+      $('btn-reveal').hidden = answered || mode === 'exam';
+      $('btn-next').textContent = i === quiz.items.length - 1 ? 'დასრულება ✓' : 'შემდეგი →';
+      const n0 = $('q-note');
+      if (answered && q.note) { n0.hidden = false; n0.innerHTML = fmt(q.note); } else { n0.hidden = true; }
+      updateScore();
+      return;
+    }
+
     it.order.forEach((origIdx, pos) => {
       const btn = document.createElement('button');
       btn.className = 'option';
@@ -244,6 +271,49 @@
     updateScore();
   }
 
+  function renderOpenQuestion(q, i, answered, box) {
+    const given = typeof quiz.answers[i] === 'string' ? quiz.answers[i] : '';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'open-answer';
+    wrap.innerHTML =
+      '<label class="open-label">ჩაწერე პასუხი:</label>' +
+      '<div class="open-row">' +
+      '<input type="text" class="open-input" id="open-input" autocomplete="off" ' +
+      'placeholder="შენი პასუხი…" value="' + esc(given).replace(/"/g, '&quot;') + '"' +
+      (answered ? ' disabled' : '') + '>' +
+      (answered ? '' : '<button type="button" class="btn btn-primary btn-sm" id="open-check">შემოწმება</button>') +
+      '</div>';
+    box.appendChild(wrap);
+
+    if (answered) {
+      const ok = isCorrect(q, given);
+      const input = wrap.querySelector('.open-input');
+      input.classList.add(ok ? 'ok' : 'bad');
+
+      const res = document.createElement('div');
+      res.className = 'explain ' + (ok ? 'good' : 'bad');
+      res.innerHTML =
+        '<b>' + (ok ? '✓ სწორია. ' : '✕ არასწორია. ') + '</b>' +
+        'სწორი პასუხი: <b>' + esc(q.answer) + '</b>' + (q.ex ? '<br>' + fmt(q.ex) : '');
+      box.appendChild(res);
+    } else {
+      const check = wrap.querySelector('#open-check');
+      const input = wrap.querySelector('.open-input');
+      const submit = () => {
+        quiz.answers[i] = input.value.trim();
+        if (mode === 'study') renderQuestion();
+        else if (quiz.idx < quiz.items.length - 1) { quiz.idx++; renderQuestion(); }
+        else finish();
+        saveState();
+      };
+      check.addEventListener('click', submit);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); submit(); }
+      });
+    }
+  }
+
   function answer(origIdx) {
     const i = quiz.idx;
     if (quiz.answers[i] !== null) return;
@@ -270,7 +340,7 @@
     quiz.items.forEach((it, i) => {
       const a = quiz.answers[i];
       if (a === null) return;
-      if (a === it.q.correct) ok++;
+      if (isCorrect(it.q, a)) ok++;
       else bad++;
     });
     if (mode === 'exam') {
@@ -291,7 +361,7 @@
       bySec[id].total++;
       const a = quiz.answers[i];
       if (a === null) skip++;
-      else if (a === it.q.correct) { ok++; bySec[id].ok++; }
+      else if (isCorrect(it.q, a)) { ok++; bySec[id].ok++; }
       else bad++;
     });
 
@@ -362,7 +432,18 @@
         el.className = 'browse-item';
         let html =
           '<div class="q-origin">' + esc(sec.title) + ' · #' + (i + 1) + '</div>' +
-          '<div class="q-text">' + fmt(q.q) + '</div><div class="options">';
+          '<div class="q-text">' + fmt(q.q) + '</div>';
+
+        if (q.type === 'open') {
+          html += '<div class="explain good"><b>✓ სწორი პასუხი: ' + esc(q.answer) + '</b>' +
+            (q.ex ? '<br>' + fmt(q.ex) : '') + '</div>';
+          if (q.note) html += '<div class="q-note">' + fmt(q.note) + '</div>';
+          el.innerHTML = html;
+          list.appendChild(el);
+          return;
+        }
+
+        html += '<div class="options">';
         q.options.forEach((opt, oi) => {
           const isC = oi === q.correct;
           const perOpt = q.explanations && q.explanations[oi]
@@ -396,7 +477,7 @@
     const items = [], answers = [], revealed = [];
     quiz.items.forEach((it, i) => {
       const a = quiz.answers[i];
-      if (onlyWrong && a === it.q.correct) return;
+      if (onlyWrong && isCorrect(it.q, a)) return;
       items.push(it);
       answers.push(a);
       revealed.push(true);
